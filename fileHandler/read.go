@@ -9,7 +9,11 @@ import (
 func ReadAll(fileName string) []string {
 	// Open the file
 	file, err := os.Open(fileName)
-	errorHandler.CheckError(err, true)
+	if err != nil {
+		errorHandler.CheckError(err, true)
+		return nil
+	}
+
 	defer file.Close()
 
 	// Read lines using a scanner
@@ -22,6 +26,7 @@ func ReadAll(fileName string) []string {
 	// Check for scanner errors
 	if err := scanner.Err(); err != nil {
 		errorHandler.CheckError(err, true)
+		return nil
 	}
 
 	return lines

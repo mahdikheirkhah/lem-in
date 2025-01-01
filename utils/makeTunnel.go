@@ -11,12 +11,14 @@ func MakeTunnel(rowData string, rooms []Room) Tunnel {
 
 	if len(rowDataSplited) != 2 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid tunnel format"), true)
+		return Tunnel{}
 	}
 	firstRoomIndex := FindRoom(rowDataSplited[0], rooms)
 	secondRoomIndex := FindRoom(rowDataSplited[1], rooms)
 
 	if secondRoomIndex == -1 || firstRoomIndex == -1 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid tunnel format"), true)
+		return Tunnel{}
 	}
 
 	return Tunnel{
