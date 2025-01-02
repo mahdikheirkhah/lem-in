@@ -7,26 +7,24 @@ import (
 	"strings"
 )
 
-func CheckContent(fileContent []string) (int, []Room, []Tunnel, Room, Room) {
+func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 	var numberOfAnts int
 	var rooms []Room
 	var tunnels []Tunnel
-	var start Room
-	var end Room
 	var err error
 
 	if len(fileContent) < 6 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
-		return -1,nil,nil,Room{},Room{}
+		return -1, nil, nil
 	}
-	fileContent, start, end = ExtractComments(fileContent)
+	fileContent, rooms = ExtractComments(fileContent, rooms)
 	if fileContent == nil {
-		return -1,nil,nil,Room{},Room{}
+		return -1, nil, nil
 	}
 	numberOfAnts, err = strconv.Atoi(fileContent[0])
 	if err != nil || numberOfAnts < 1 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid number of Ants"), true)
-		return -1,nil,nil,Room{},Room{}
+		return -1, nil, nil
 	}
 	size := len(fileContent)
 	index := 1
@@ -39,31 +37,31 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel, Room, Room) {
 				break
 			} else {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
-				return -1,nil,nil,Room{},Room{}
+				return -1, nil, nil
 			}
 		}
 		rooms = append(rooms, MakeRoom(fileContent[i]))
 	}
 	if len(rooms) == 0 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
-		return -1,nil,nil,Room{},Room{}
+		return -1, nil, nil
 	}
 	// Tunnels should be after the defination of rooms
 	for i := index; i < size; i++ {
 		if !IsTunnel(fileContent[i]) {
 			errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
-			return -1,nil,nil,Room{},Room{}
+			return -1, nil, nil
 		}
 		tunnels = append(tunnels, MakeTunnel(fileContent[i], rooms))
 	}
 	if len(tunnels) == 0 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
-		return -1,nil,nil,Room{},Room{}
+		return -1, nil, nil
 	}
-	return numberOfAnts, rooms, tunnels, start, end
+	return numberOfAnts, rooms, tunnels
 }
 
-func ExtractComments(fileContent []string) ([]string, Room, Room) {
+func ExtractComments(fileContent []string, rooms []Room) ([]string, []Room) {
 	var modifiedContent []string
 	var start Room
 	var end Room
@@ -75,29 +73,35 @@ func ExtractComments(fileContent []string) ([]string, Room, Room) {
 			startFlag = true
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no start room found"), true)
-				return nil, Room{}, Room{}
+				return nil, []Room{}
 			}
 			start = MakeRoom(fileContent[i+1])
+			start.IsStart = true
+			rooms = append(rooms, start)
+			i++
 		} else if strings.ToLower(fileContent[i]) == "##end" {
 			endFlag = true
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no end room found"), true)
-				return nil, Room{}, Room{}
+				return nil, []Room{}
 			}
 			end = MakeRoom(fileContent[i+1])
+			end.IsEnd = true
+			rooms = append(rooms, end)
+			i++
 		} else if !strings.HasPrefix(fileContent[i], "#") {
 			modifiedContent = append(modifiedContent, fileContent[i])
 		}
 	}
-	if !startFlag{
+	if !startFlag {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, no start room found"), true)
-		return nil, Room{}, Room{}
+		return nil, []Room{}
 	} else if !endFlag {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, no end room found"), true)
-		return nil, Room{}, Room{}
+		return nil, []Room{}
 	}
 
-	return modifiedContent, start, end
+	return modifiedContent, rooms
 }
 
 func IsTunnel(line string) bool {

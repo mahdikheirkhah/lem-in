@@ -35,3 +35,21 @@ func FindRoom(roomName string, rooms []Room) int {
 	}
 	return -1
 }
+
+func FindStart(rooms []Room) (int, Room) {
+	for i, room := range rooms {
+		if room.IsStart {
+			return i, room
+		}
+	}
+	return -1, Room{}
+}
+
+func FindEnd(rooms []Room) (int, Room) {
+	for i, room := range rooms {
+		if room.IsEnd {
+			return i, room
+		}
+	}
+	return -1, Room{}
+}
