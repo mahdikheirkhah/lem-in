@@ -23,6 +23,7 @@ type Graph struct {
 // Add an edge to the graph
 func (g *Graph) AddEdge(from, to string) {
 	g.Edges[from] = append(g.Edges[from], to)
+	g.Edges[to] = append(g.Edges[to], from) // For undirected flow
 }
 
 // BFS to find the shortest path
