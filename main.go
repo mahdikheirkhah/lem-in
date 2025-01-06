@@ -47,4 +47,5 @@ func main() {
 	maxFlow, paths := graph.EdmondsKarp(startRoom, endRoom, rooms)
 	fmt.Println("max flow is: ", maxFlow)
 	fmt.Println("path is: ", paths)
+	utils.MakeAntsQueue(paths, numberOfAnts)
 }

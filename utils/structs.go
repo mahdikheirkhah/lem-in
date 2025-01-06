@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"LemIn/errorHandler"
+	"errors"
+)
+
 type Room struct {
 	Name        string
 	Coord_x     int
@@ -12,6 +17,16 @@ type Room struct {
 type Tunnel struct {
 	FromRoom Room
 	ToRoom   Room
+}
+type Ant struct {
+	id              int
+	pathIndex       int
+	currentRoomName string
+}
+
+type Solution struct {
+	pathIndex int
+	ants      []Ant
 }
 
 // Define a graph using an adjacency list
@@ -73,9 +88,20 @@ func (g *Graph) EdmondsKarp(start, end Room, rooms []Room) (int, [][]string) {
 			// Add reverse edge
 			// g.adj[v] = append(g.adj[v], u)
 		}
-
+		path = reverseSlice(path)
 		allPath = append(allPath, path)
 	}
 
 	return maxFlow, allPath
+}
+
+func reverseSlice(slice []string) []string {
+	var result []string
+	if len(slice) < 2 {
+		errorHandler.CheckError(errors.New("invalid path"), true)
+	}
+	for i := len(slice) - 2; i > -1; i-- {
+		result = append(result, slice[i])
+	}
+	return result
 }

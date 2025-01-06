@@ -58,6 +58,10 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
 		return -1, nil, nil
 	}
+	if !checkUniqueName(rooms) {
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
+		return -1, nil, nil
+	}
 	return numberOfAnts, rooms, tunnels
 }
 
@@ -121,4 +125,16 @@ func IsRoom(line string) bool {
 	}
 	splittedLine := strings.Split(line, " ")
 	return len(splittedLine) == 3
+}
+
+func checkUniqueName(rooms []Room) bool {
+
+	for i := 0; i < len(rooms); i++ {
+		for j := i + 1; j < len(rooms); j++ {
+			if rooms[i].Name == rooms[j].Name {
+				return false
+			}
+		}
+	}
+	return true
 }
