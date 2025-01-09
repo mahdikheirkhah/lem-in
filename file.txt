@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 10
 ##start
 start 1 6
@@ -32,3 +33,22 @@ e-end
 c-k
 n-m
 h-n
+=======
+9
+##start
+richard 0 6
+gilfoyle 6 3
+erlich 9 6
+dinish 6 9
+jimYoung 11 7
+##end
+peter 14 6
+richard-dinish
+dinish-jimYoung
+richard-gilfoyle
+gilfoyle-peter
+gilfoyle-erlich
+richard-erlich
+erlich-jimYoung
+jimYoung-peter
+>>>>>>> ddd451529dd110b394bf506fe7c828cdc7620d32

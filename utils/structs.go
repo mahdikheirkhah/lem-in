@@ -92,7 +92,9 @@ func (g *Graph) EdmondsKarp(start, end Room, rooms []Room) (int, [][]string) {
 		path = reverseSlice(path)
 		allPath = append(allPath, path)
 	}
-
+	if len(allPath) == 0 {
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, no path found"), true)
+	}
 	return maxFlow, allPath
 }
 
