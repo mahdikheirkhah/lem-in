@@ -19,9 +19,10 @@ type Tunnel struct {
 	ToRoom   Room
 }
 type Ant struct {
-	id              int
-	pathIndex       int
-	currentRoomName string
+	id               int
+	pathIndex        int
+	currentRoomName  string
+	hasReachedTheEnd bool
 }
 
 type Solution struct {

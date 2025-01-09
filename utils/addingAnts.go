@@ -2,7 +2,7 @@ package utils
 
 import "fmt"
 
-func MakeAntsQueue(paths [][]string, numberOfAnts int) {
+func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	numberOfPaths := len(paths)
 
 	ants := make([]Ant, numberOfAnts)
@@ -24,6 +24,7 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) {
 
 	fmt.Println("ants after update: ", ants)
 
+	return solutions
 	// for i := 1; i < numberOfAnts+1; i++ {
 	// 	findTheSuitablePath(paths, antsQueue)
 	// }
