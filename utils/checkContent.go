@@ -42,10 +42,12 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 		}
 		rooms = append(rooms, MakeRoom(fileContent[i]))
 	}
+
 	if len(rooms) == 0 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
 		return -1, nil, nil
 	}
+
 	// Tunnels should be after the defination of rooms
 	for i := index; i < size; i++ {
 		if !IsTunnel(fileContent[i]) {
@@ -54,14 +56,17 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 		}
 		tunnels = append(tunnels, MakeTunnel(fileContent[i], rooms))
 	}
+
 	if len(tunnels) == 0 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
 		return -1, nil, nil
 	}
+
 	if !checkUniqueName(rooms) {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
 		return -1, nil, nil
 	}
+
 	return numberOfAnts, rooms, tunnels
 }
 
@@ -78,11 +83,14 @@ func ExtractComments(fileContent []string, rooms []Room) ([]string, []Room) {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, more than one start room found"), true)
 				return nil, []Room{}
 			}
+
 			startFlag = true
+
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no start room found"), true)
 				return nil, []Room{}
 			}
+
 			start = MakeRoom(fileContent[i+1])
 			start.IsStart = true
 			rooms = append(rooms, start)
@@ -92,11 +100,14 @@ func ExtractComments(fileContent []string, rooms []Room) ([]string, []Room) {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, more than one end room found"), true)
 				return nil, []Room{}
 			}
+
 			endFlag = true
+
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no end room found"), true)
 				return nil, []Room{}
 			}
+
 			end = MakeRoom(fileContent[i+1])
 			end.IsEnd = true
 			rooms = append(rooms, end)
@@ -136,7 +147,6 @@ func IsRoom(line string) bool {
 }
 
 func checkUniqueName(rooms []Room) bool {
-
 	for i := 0; i < len(rooms); i++ {
 		for j := i + 1; j < len(rooms); j++ {
 			if rooms[i].Name == rooms[j].Name {

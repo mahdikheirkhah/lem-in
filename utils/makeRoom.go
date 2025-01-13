@@ -13,6 +13,7 @@ func MakeRoom(rowData string) Room {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
 		return Room{}
 	}
+
 	roomName := rowDataSplited[0]
 	if strings.HasPrefix(roomName, "#") || strings.HasPrefix(roomName, "L") {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
@@ -25,6 +26,7 @@ func MakeRoom(rowData string) Room {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
 		return Room{}
 	}
+
 	return Room{
 		Name:    roomName,
 		Coord_x: coord_x,

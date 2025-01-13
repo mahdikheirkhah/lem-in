@@ -10,7 +10,7 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	initSolutions(solutions)
 
 	pathIndex := 0
-	// AntsNumberInEachPath(ants)
+
 	for antsIndex := 0; antsIndex < numberOfAnts; antsIndex++ {
 		pathIndex = findSuitablePath(pathIndex, paths, solutions)
 
@@ -19,18 +19,19 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	}
 
 	return solutions
-	// for i := 1; i < numberOfAnts+1; i++ {
-	// 	findTheSuitablePath(paths, antsQueue)
-	// }
 }
 
 func findSuitablePath(lastPathIndex int, paths [][]string, solutions []Solution) int {
-	//minLen := len(paths[lastPathIndex]) + len(solutions[lastPathIndex].ants)
 	cntr := 0
-	for i := lastPathIndex; cntr < len(solutions) && i < len(solutions); i++ {
+	for i := lastPathIndex; cntr < len(solutions); i++ {
 		cntr++
-		// if len(paths[i])+len(solutions[i].ants) <= minLen {
-		if i == len(solutions)-1 {
+		if i != len(solutions)-1 {
+			if len(paths[i])+len(solutions[i].ants) > len(paths[i+1])+len(solutions[i+1].ants) {
+				continue
+			} else {
+				return i
+			}
+		} else {
 			if len(paths[i])+len(solutions[i].ants) > len(paths[0])+len(solutions[0].ants) {
 				if lastPathIndex == 0 {
 					return 0
@@ -39,22 +40,9 @@ func findSuitablePath(lastPathIndex int, paths [][]string, solutions []Solution)
 			} else {
 				return i
 			}
-		} else {
-			// if i == 1 {
-			// 	fmt.Println("lastPathIndex", lastPathIndex)
-			// 	fmt.Println("i is :", i)
-			// 	fmt.Println("solutions is ", solutions)
-			// 	fmt.Println("len(paths[i])+len(solutions[i].ants) is ", len(paths[i])+len(solutions[i].ants))
-			// 	fmt.Println("len(paths[i+1])+len(solutions[i+1].ants)", len(paths[i+1])+len(solutions[i+1].ants))
-			// }
-			if len(paths[i])+len(solutions[i].ants) > len(paths[i+1])+len(solutions[i+1].ants) {
-				continue
-			} else {
-				return i
-			}
 		}
 	}
-	return 1
+	return 0
 }
 
 func initAnts(numberOfAnts int, ants []Ant) {

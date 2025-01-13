@@ -303,7 +303,7 @@ func TestReadAll(t *testing.T) {
 		{
 			name:          "Invalid file",
 			fileName:      "invalidFile.txt",
-			expectedError: "Error open invalidFile.txt: The system cannot find the file specified.",
+			expectedError: "Error open invalidFile.txt: no such file or directory",
 		},
 	}
 
@@ -380,73 +380,109 @@ func TestCheckContant(t *testing.T) {
 			expectedNumberOfAnts: 4,
 			expectedRooms: []utils.Room{
 				{
-					Name:    "0",
-					Coord_x: 0,
-					Coord_y: 3,
+					Name:        "0",
+					Coord_x:     0,
+					Coord_y:     3,
+					IsStart:     true,
+					IsEnd:       false,
+					AddedInPath: false,
 				},
 				{
-					Name:    "2",
-					Coord_x: 2,
-					Coord_y: 5,
+					Name:        "1",
+					Coord_x:     8,
+					Coord_y:     3,
+					IsStart:     false,
+					IsEnd:       true,
+					AddedInPath: false,
 				},
 				{
-					Name:    "3",
-					Coord_x: 4,
-					Coord_y: 0,
+					Name:        "2",
+					Coord_x:     2,
+					Coord_y:     5,
+					IsStart:     false,
+					IsEnd:       false,
+					AddedInPath: false,
 				},
 				{
-					Name:    "1",
-					Coord_x: 8,
-					Coord_y: 3,
+					Name:        "3",
+					Coord_x:     4,
+					Coord_y:     0,
+					IsStart:     false,
+					IsEnd:       false,
+					AddedInPath: false,
 				},
 			},
 			expectedTunnels: []utils.Tunnel{
 				{
 					FromRoom: utils.Room{
-						Name:    "0",
-						Coord_x: 0,
-						Coord_y: 3,
+						Name:        "0",
+						Coord_x:     0,
+						Coord_y:     3,
+						IsStart:     true,
+						IsEnd:       false,
+						AddedInPath: false,
 					},
 					ToRoom: utils.Room{
-						Name:    "2",
-						Coord_x: 2,
-						Coord_y: 5,
+						Name:        "2",
+						Coord_x:     2,
+						Coord_y:     5,
+						IsStart:     false,
+						IsEnd:       false,
+						AddedInPath: false,
 					},
 				},
 				{
 					FromRoom: utils.Room{
-						Name:    "2",
-						Coord_x: 2,
-						Coord_y: 5,
+						Name:        "2",
+						Coord_x:     2,
+						Coord_y:     5,
+						IsStart:     false,
+						IsEnd:       false,
+						AddedInPath: false,
 					},
 					ToRoom: utils.Room{
-						Name:    "3",
-						Coord_x: 4,
-						Coord_y: 0,
+						Name:        "3",
+						Coord_x:     4,
+						Coord_y:     0,
+						IsStart:     false,
+						IsEnd:       false,
+						AddedInPath: false,
 					},
 				},
 				{
 					FromRoom: utils.Room{
-						Name:    "3",
-						Coord_x: 4,
-						Coord_y: 0,
+						Name:        "3",
+						Coord_x:     4,
+						Coord_y:     0,
+						IsStart:     false,
+						IsEnd:       false,
+						AddedInPath: false,
 					},
 					ToRoom: utils.Room{
-						Name:    "1",
-						Coord_x: 8,
-						Coord_y: 3,
+						Name:        "1",
+						Coord_x:     8,
+						Coord_y:     3,
+						IsStart:     false,
+						IsEnd:       true,
+						AddedInPath: false,
 					},
 				},
 			},
 			expectedStart: utils.Room{
-				Name:    "0",
-				Coord_x: 0,
-				Coord_y: 3,
+				Name:        "0",
+				Coord_x:     0,
+				Coord_y:     3,
+				IsStart:     true,
+				IsEnd:       false,
+				AddedInPath: false,
 			},
 			expectedEnd: utils.Room{
-				Name:    "1",
-				Coord_x: 8,
-				Coord_y: 3,
+				Name:        "1",
+				Coord_x:     8,
+				Coord_y:     3,
+				IsStart:     false,
+				IsEnd:       true,
+				AddedInPath: false,
 			},
 		},
 		{
@@ -491,7 +527,9 @@ func TestCheckContant(t *testing.T) {
 			fileContent := fileHandler.ReadAll(test.testFileName)
 			if test.expectedError == "" {
 				// Test valid rooms
-				numberOfAnts, rooms, tunnels, start, end := utils.CheckContent(fileContent)
+				numberOfAnts, rooms, tunnels := utils.CheckContent(fileContent)
+				_, start := utils.FindStart(rooms)
+				_, end := utils.FindEnd(rooms)
 				if numberOfAnts != test.expectedNumberOfAnts {
 					t.Errorf("Expected %v but got %v", test.expectedNumberOfAnts, numberOfAnts)
 				}
@@ -515,6 +553,146 @@ func TestCheckContant(t *testing.T) {
 			} else {
 				// Test invalid rooms
 				utils.CheckContent(fileContent)
+				// Check if exit was called
+				if !calledExit {
+					t.Errorf("Expected program to exit, but it did not")
+				}
+
+				// Validate captured error message
+				output := buf.String()
+				t.Logf("Captured Output: '%s'", output) // Log the captured output for debugging
+
+				if !strings.Contains(output, test.expectedError) {
+					t.Errorf("Expected output to contain '%s', got '%s'", test.expectedError, output)
+				}
+			}
+		})
+	}
+}
+
+func TestExtractAllPaths(t *testing.T) {
+	calledExit := false
+
+	// Mock os.Exit to prevent the program from exiting during tests
+	errorHandler.ExitFunc = func(code int) {
+		calledExit = true
+	}
+
+	// Restore original os.Exit after tests
+	defer func() {
+		errorHandler.ExitFunc = os.Exit
+	}()
+
+	tests := []struct {
+		name           string
+		graph          utils.Graph
+		start          utils.Room
+		end            utils.Room
+		rooms          []utils.Room
+		expectedError  string
+		expectedOutput [][]utils.Room
+	}{
+		{
+			name: "Valid test",
+			graph: utils.Graph{
+				Vertices: 4,
+				Edges: map[string][]string{
+					"0": {"2"},
+					"1": {"3"},
+					"2": {"0", "3"},
+					"3": {"2", "1"},
+				},
+			},
+			start: utils.Room{Name: "0", Coord_x: 0, Coord_y: 3, IsStart: true, IsEnd: false, AddedInPath: false},
+			end:   utils.Room{Name: "1", Coord_x: 8, Coord_y: 3, IsStart: false, IsEnd: true, AddedInPath: false},
+			rooms: []utils.Room{
+				{Name: "0", Coord_x: 0, Coord_y: 3, IsStart: true, IsEnd: false, AddedInPath: false},
+				{Name: "1", Coord_x: 8, Coord_y: 3, IsStart: false, IsEnd: true, AddedInPath: false},
+				{Name: "2", Coord_x: 2, Coord_y: 5, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "3", Coord_x: 4, Coord_y: 0, IsStart: false, IsEnd: false, AddedInPath: false},
+			},
+			expectedOutput: [][]utils.Room{
+				{
+					{Name: "0", Coord_x: 0, Coord_y: 3, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "2", Coord_x: 2, Coord_y: 5, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "3", Coord_x: 4, Coord_y: 0, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "1", Coord_x: 8, Coord_y: 3, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+			},
+		},
+		{
+			name: "Invalid test",
+			graph: utils.Graph{
+				Vertices: 17,
+				Edges: map[string][]string{
+					"0":  {"1", "5", "9", "10"},
+					"1":  {"0", "2", "11", "15"},
+					"10": {"0", "16"},
+					"11": {"1", "12"},
+					"12": {"11", "13"},
+					"13": {"12", "14"},
+					"14": {"13", "15"},
+					"15": {"14", "1"},
+					"16": {"10", "7"},
+					"2":  {"1", "3", "9"},
+					"3":  {"2", "3", "3"},
+					"5":  {"0", "6"},
+				},
+			},
+			start: utils.Room{Name: "0", Coord_x: 2, Coord_y: 0, IsStart: true, IsEnd: false, AddedInPath: false},
+			end:   utils.Room{Name: "4", Coord_x: 23, Coord_y: 0, IsStart: false, IsEnd: true, AddedInPath: false},
+			rooms: []utils.Room{
+				{Name: "0", Coord_x: 2, Coord_y: 0, IsStart: true, IsEnd: false, AddedInPath: false},
+				{Name: "4", Coord_x: 23, Coord_y: 0, IsStart: false, IsEnd: true, AddedInPath: false},
+				{Name: "1", Coord_x: 7, Coord_y: 0, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "2", Coord_x: 13, Coord_y: 0, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "3", Coord_x: 18, Coord_y: 0, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "5", Coord_x: 7, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "6", Coord_x: 10, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "7", Coord_x: 13, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "8", Coord_x: 16, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "9", Coord_x: 7, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "10", Coord_x: 7, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "11", Coord_x: 13, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "12", Coord_x: 15, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "13", Coord_x: 17, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "14", Coord_x: 19, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "15", Coord_x: 21, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+				{Name: "16", Coord_x: 9, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+			},
+			expectedError: "Error ERROR: invalid data format, no path found",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Capture console output
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+
+			// Reset the calledExit flag
+			calledExit = false
+
+			defer func() {
+				log.SetOutput(os.Stderr) // Restore original output
+			}()
+
+			if test.expectedError == "" {
+				// Test valid rooms
+				Output := utils.ExtractAllPaths(test.graph, test.start, test.end, test.rooms)
+				if len(Output) != len(test.expectedOutput) {
+					t.Errorf("Wrong outPut")
+				}
+				for i := 0; i < len(Output); i++ {
+					for j := 0; j < len(Output[i]); j++ {
+						if Output[i][j] != test.expectedOutput[i][j] {
+							t.Errorf("Expected %v but got %v", test.expectedOutput[i][j], Output[i][j])
+						}
+					}
+				}
+			} else {
+				// Test invalid rooms
+				utils.ExtractAllPaths(test.graph, test.start, test.end, test.rooms)
 				// Check if exit was called
 				if !calledExit {
 					t.Errorf("Expected program to exit, but it did not")

@@ -1,7 +1,12 @@
 package utils
 
+import (
+	"LemIn/errorHandler"
+	"errors"
+)
+
 // ExtractAllPaths extracts all paths from start to end
-func ExtractAllPaths(graph Graph, start, end Room) [][]Room {
+func ExtractAllPaths(graph Graph, start, end Room, rooms []Room) [][]Room {
 	var allPaths [][]Room
 	var currentPath []Room
 
@@ -17,7 +22,8 @@ func ExtractAllPaths(graph Graph, start, end Room) [][]Room {
 		visited[node.Name] = true
 		for _, neighborName := range graph.Edges[node.Name] {
 			if !visited[neighborName] {
-				neighbor := Room{Name: neighborName} // Assuming Room can be reconstructed from name
+				neighborIndex := FindRoom(neighborName, rooms)
+				neighbor := rooms[neighborIndex] // Assuming Room can be reconstructed from name
 				currentPath = append(currentPath, neighbor)
 				dfs(neighbor, visited)
 				currentPath = currentPath[:len(currentPath)-1]
@@ -30,6 +36,10 @@ func ExtractAllPaths(graph Graph, start, end Room) [][]Room {
 	currentPath = append(currentPath, start)
 	dfs(start, make(map[string]bool))
 
+	if len(allPaths) < 1 {
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, no path found"), true)
+	}
+
 	return allPaths
 }
 
@@ -39,16 +49,19 @@ func FilterNonIntersectingGroups(allPaths [][]Room) [][][]Room {
 	// Helper function to check if a path can be added to the group
 	canAddPath := func(group [][]Room, path []Room) bool {
 		usedNodes := make(map[string]bool)
+
 		for _, existingPath := range group {
 			for i := 1; i < len(existingPath)-1; i++ { // Skip start and end nodes
 				usedNodes[existingPath[i].Name] = true
 			}
 		}
+
 		for i := 1; i < len(path)-1; i++ { // Skip start and end nodes
 			if usedNodes[path[i].Name] {
 				return false
 			}
 		}
+
 		return true
 	}
 
@@ -81,13 +94,13 @@ func FilterNonIntersectingGroups(allPaths [][]Room) [][][]Room {
 func RemoveSmallerGroups(groups [][][]Room) [][][]Room {
 	// Helper function to check if all paths in group1 exist in group2
 	containsAllPaths := func(group1, group2 [][]Room) bool {
-		pathSet := make(map[string]struct{})
+		pathSet := make(map[string]bool)
 		for _, path := range group2 {
 			var pathKey string
 			for _, room := range path {
 				pathKey += room.Name + ","
 			}
-			pathSet[pathKey] = struct{}{}
+			pathSet[pathKey] = true
 		}
 
 		for _, path := range group1 {
@@ -95,7 +108,7 @@ func RemoveSmallerGroups(groups [][][]Room) [][][]Room {
 			for _, room := range path {
 				pathKey += room.Name + ","
 			}
-			if _, exists := pathSet[pathKey]; !exists {
+			if !pathSet[pathKey] {
 				return false
 			}
 		}

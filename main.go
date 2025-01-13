@@ -1,10 +1,8 @@
 package main
 
 import (
-	"LemIn/errorHandler"
 	"LemIn/fileHandler"
 	"LemIn/utils"
-	"errors"
 	"fmt"
 	"sort"
 )
@@ -27,10 +25,7 @@ func main() {
 	_, endRoom := utils.FindEnd(rooms)
 
 	// Step 1: Extract all paths
-	allPaths := utils.ExtractAllPaths(graph, startRoom, endRoom)
-	if len(allPaths) < 1 {
-		errorHandler.CheckError(errors.New("ERROR: invalid data format, no path found"), true)
-	}
+	allPaths := utils.ExtractAllPaths(graph, startRoom, endRoom, rooms)
 
 	sort.Sort(PathSlice(allPaths))
 
