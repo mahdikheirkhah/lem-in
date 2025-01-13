@@ -6,10 +6,13 @@ func MoveAnts(solutions []Solution, pathsNames [][]string, rooms []Room, numberO
 	paths := changeTypeOfPaths(pathsNames, rooms)
 
 	numberOfAntsNotReachedToEnd := numberOfAnts
+	turnNumber := 0
 
 	// isFirstTurn := true
 	// fmt.Println("paths in room are: ", paths)
 	for numberOfAntsNotReachedToEnd > 0 {
+		turnNumber++
+		fmt.Print("turn ", turnNumber, ": ")
 		// if isFirstTurn {
 		// 	for _, solution := range solutions {
 		// 		// fmt.Println("solution pathIndex", solution.pathIndex)
