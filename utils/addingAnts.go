@@ -1,14 +1,10 @@
 package utils
 
-import "fmt"
-
 func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	numberOfPaths := len(paths)
 
 	ants := make([]Ant, numberOfAnts)
 	initAnts(numberOfAnts, ants)
-
-	fmt.Println("ants before update: ", ants)
 
 	solutions := make([]Solution, numberOfPaths)
 	initSolutions(solutions)
@@ -21,8 +17,6 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 		ants[antsIndex].pathIndex = pathIndex
 		solutions[pathIndex].ants = append(solutions[pathIndex].ants, ants[antsIndex])
 	}
-
-	fmt.Println("ants after update: ", ants)
 
 	return solutions
 	// for i := 1; i < numberOfAnts+1; i++ {

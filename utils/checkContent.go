@@ -74,6 +74,10 @@ func ExtractComments(fileContent []string, rooms []Room) ([]string, []Room) {
 	endFlag := false
 	for i := 0; i < size; i++ {
 		if strings.ToLower(fileContent[i]) == "##start" {
+			if startFlag {
+				errorHandler.CheckError(errors.New("ERROR: invalid data format, more than one start room found"), true)
+				return nil, []Room{}
+			}
 			startFlag = true
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no start room found"), true)
@@ -84,6 +88,10 @@ func ExtractComments(fileContent []string, rooms []Room) ([]string, []Room) {
 			rooms = append(rooms, start)
 			i++
 		} else if strings.ToLower(fileContent[i]) == "##end" {
+			if endFlag {
+				errorHandler.CheckError(errors.New("ERROR: invalid data format, more than one end room found"), true)
+				return nil, []Room{}
+			}
 			endFlag = true
 			if i == size-1 {
 				errorHandler.CheckError(errors.New("ERROR: invalid data format, no end room found"), true)
