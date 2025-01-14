@@ -709,3 +709,871 @@ func TestExtractAllPaths(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterNonIntersectingGroups(t *testing.T) {
+	calledExit := false
+
+	// Mock os.Exit to prevent the program from exiting during tests
+	errorHandler.ExitFunc = func(code int) {
+		calledExit = true
+	}
+
+	// Restore original os.Exit after tests
+	defer func() {
+		errorHandler.ExitFunc = os.Exit
+	}()
+
+	tests := []struct {
+		name           string
+		allPaths       [][]utils.Room
+		expectedError  string
+		expectedOutput [][][]utils.Room
+	}{
+		{
+			name: "Valid test",
+			allPaths: [][]utils.Room{
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+				{
+					{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+					{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+					{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+				},
+			},
+			expectedOutput: [][][]utils.Room{
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Capture console output
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+
+			// Reset the calledExit flag
+			calledExit = false
+
+			defer func() {
+				log.SetOutput(os.Stderr) // Restore original output
+			}()
+
+			if test.expectedError == "" {
+				// Test valid rooms
+				Output := utils.FilterNonIntersectingGroups(test.allPaths)
+				if len(Output) != len(test.expectedOutput) {
+					t.Errorf("Wrong outPut")
+				}
+				for i := 0; i < len(Output); i++ {
+					for j := 0; j < len(Output[i]); j++ {
+						for k := 0; k < len(Output[i][j]); k++ {
+							if Output[i][j][k] != test.expectedOutput[i][j][k] {
+								t.Errorf("Expected %v but got %v", test.expectedOutput[i][j][k], Output[i][j][k])
+							}
+						}
+
+					}
+				}
+			} else {
+				// Test invalid rooms
+				utils.FilterNonIntersectingGroups(test.allPaths)
+				// Check if exit was called
+				if !calledExit {
+					t.Errorf("Expected program to exit, but it did not")
+				}
+
+				// Validate captured error message
+				output := buf.String()
+				t.Logf("Captured Output: '%s'", output) // Log the captured output for debugging
+
+				if !strings.Contains(output, test.expectedError) {
+					t.Errorf("Expected output to contain '%s', got '%s'", test.expectedError, output)
+				}
+			}
+		})
+	}
+}
+
+func TestRemoveSmallerGroups(t *testing.T) {
+	calledExit := false
+
+	// Mock os.Exit to prevent the program from exiting during tests
+	errorHandler.ExitFunc = func(code int) {
+		calledExit = true
+	}
+
+	// Restore original os.Exit after tests
+	defer func() {
+		errorHandler.ExitFunc = os.Exit
+	}()
+
+	tests := []struct {
+		name                  string
+		nonIntersectingGroups [][][]utils.Room
+		expectedError         string
+		expectedOutput        [][][]utils.Room
+	}{
+		{
+			name: "Valid test",
+			nonIntersectingGroups: [][][]utils.Room{
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+			},
+			expectedOutput: [][][]utils.Room{
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Capture console output
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+
+			// Reset the calledExit flag
+			calledExit = false
+
+			defer func() {
+				log.SetOutput(os.Stderr) // Restore original output
+			}()
+
+			if test.expectedError == "" {
+				// Test valid rooms
+				Output := utils.RemoveSmallerGroups(test.nonIntersectingGroups)
+				if len(Output) != len(test.expectedOutput) {
+					t.Errorf("Wrong outPut")
+				}
+				for i := 0; i < len(Output); i++ {
+					for j := 0; j < len(Output[i]); j++ {
+						for k := 0; k < len(Output[i][j]); k++ {
+							if Output[i][j][k] != test.expectedOutput[i][j][k] {
+								t.Errorf("Expected %v but got %v", test.expectedOutput[i][j][k], Output[i][j][k])
+							}
+						}
+
+					}
+				}
+			} else {
+				// Test invalid rooms
+				utils.RemoveSmallerGroups(test.nonIntersectingGroups)
+				// Check if exit was called
+				if !calledExit {
+					t.Errorf("Expected program to exit, but it did not")
+				}
+
+				// Validate captured error message
+				output := buf.String()
+				t.Logf("Captured Output: '%s'", output) // Log the captured output for debugging
+
+				if !strings.Contains(output, test.expectedError) {
+					t.Errorf("Expected output to contain '%s', got '%s'", test.expectedError, output)
+				}
+			}
+		})
+	}
+}
