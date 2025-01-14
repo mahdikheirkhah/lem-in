@@ -19,15 +19,15 @@ type Tunnel struct {
 	ToRoom   Room
 }
 type Ant struct {
-	id               int
-	pathIndex        int
-	currentRoomName  string
-	hasReachedTheEnd bool
+	Id               int
+	PathIndex        int
+	CurrentRoomName  string
+	HasReachedTheEnd bool
 }
 
 type Solution struct {
-	pathIndex int
-	ants      []Ant
+	PathIndex int
+	Ants      []Ant
 }
 
 // Define a graph using an adjacency list

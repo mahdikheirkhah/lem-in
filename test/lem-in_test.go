@@ -1577,3 +1577,412 @@ func TestRemoveSmallerGroups(t *testing.T) {
 		})
 	}
 }
+
+func TestFindBestPathGroup(t *testing.T) {
+	calledExit := false
+
+	// Mock os.Exit to prevent the program from exiting during tests
+	errorHandler.ExitFunc = func(code int) {
+		calledExit = true
+	}
+
+	// Restore original os.Exit after tests
+	defer func() {
+		errorHandler.ExitFunc = os.Exit
+	}()
+
+	tests := []struct {
+		name           string
+		filteredGroups [][][]utils.Room
+		numberOfAnts   int
+		expectedError  string
+		expectedOutput [][]string
+	}{
+		{
+			name: "Valid test",
+			filteredGroups: [][][]utils.Room{
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "0", Coord_x: 4, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "o", Coord_x: 6, Coord_y: 8, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "e", Coord_x: 8, Coord_y: 4, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+				{
+					{
+						{Name: "start", Coord_x: 1, Coord_y: 6, IsStart: true, IsEnd: false, AddedInPath: false},
+						{Name: "t", Coord_x: 1, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "E", Coord_x: 5, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "a", Coord_x: 8, Coord_y: 9, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "m", Coord_x: 8, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "n", Coord_x: 6, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "h", Coord_x: 4, Coord_y: 6, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "A", Coord_x: 5, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "c", Coord_x: 8, Coord_y: 1, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "k", Coord_x: 11, Coord_y: 2, IsStart: false, IsEnd: false, AddedInPath: false},
+						{Name: "end", Coord_x: 11, Coord_y: 6, IsStart: false, IsEnd: true, AddedInPath: false},
+					},
+				},
+			},
+			numberOfAnts: 10,
+			expectedOutput: [][]string{
+				{
+					"t",
+					"E",
+					"a",
+					"m",
+					"end",
+				},
+				{
+					"h",
+					"A",
+					"c",
+					"k",
+					"end",
+				},
+				{
+					"0",
+					"o",
+					"n",
+					"e",
+					"end",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Capture console output
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+
+			// Reset the calledExit flag
+			calledExit = false
+
+			defer func() {
+				log.SetOutput(os.Stderr) // Restore original output
+			}()
+
+			if test.expectedError == "" {
+				// Test valid rooms
+				Output := utils.FindBestPathGroup(test.filteredGroups, test.numberOfAnts)
+				if len(Output) != len(test.expectedOutput) {
+					t.Errorf("Wrong outPut")
+				}
+				for i := 0; i < len(Output); i++ {
+					for j := 0; j < len(Output[i]); j++ {
+						if Output[i][j] != test.expectedOutput[i][j] {
+							t.Errorf("Expected %v but got %v", test.expectedOutput[i][j], Output[i][j])
+						}
+					}
+
+				}
+			} else {
+				// Test invalid rooms
+				utils.FindBestPathGroup(test.filteredGroups, test.numberOfAnts)
+				// Check if exit was called
+				if !calledExit {
+					t.Errorf("Expected program to exit, but it did not")
+				}
+
+				// Validate captured error message
+				output := buf.String()
+				t.Logf("Captured Output: '%s'", output) // Log the captured output for debugging
+
+				if !strings.Contains(output, test.expectedError) {
+					t.Errorf("Expected output to contain '%s', got '%s'", test.expectedError, output)
+				}
+			}
+		})
+	}
+}
+
+func TestMakeAntsQueue(t *testing.T) {
+	calledExit := false
+
+	// Mock os.Exit to prevent the program from exiting during tests
+	errorHandler.ExitFunc = func(code int) {
+		calledExit = true
+	}
+
+	// Restore original os.Exit after tests
+	defer func() {
+		errorHandler.ExitFunc = os.Exit
+	}()
+	tests := []struct {
+		name               string
+		bestPathGroupNames [][]string
+		numberOfAnts       int
+		expectedError      string
+		expectedOutput     []utils.Solution
+	}{
+		{
+			name:         "Valid test",
+			numberOfAnts: 10,
+			bestPathGroupNames: [][]string{
+				{
+					"t",
+					"E",
+					"a",
+					"m",
+					"end",
+				},
+				{
+					"h",
+					"A",
+					"c",
+					"k",
+					"end",
+				},
+				{
+					"0",
+					"o",
+					"n",
+					"e",
+					"end",
+				},
+			},
+			expectedOutput: []utils.Solution{{
+				PathIndex: 0,
+				Ants: []utils.Ant{
+					{Id: 1, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+					{Id: 5, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+					{Id: 9, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+					{Id: 10, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+				},
+			},
+				{
+					PathIndex: 1,
+					Ants: []utils.Ant{
+						{Id: 2, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 6, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 7, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
+					},
+				},
+				{
+					PathIndex: 2,
+					Ants: []utils.Ant{
+						{Id: 3, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 4, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 8, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
+					},
+				}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Capture console output
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+
+			// Reset the calledExit flag
+			calledExit = false
+
+			defer func() {
+				log.SetOutput(os.Stderr) // Restore original output
+			}()
+
+			if test.expectedError == "" {
+				// Test valid rooms
+				Output := utils.MakeAntsQueue(test.bestPathGroupNames, test.numberOfAnts)
+				if len(Output) != len(test.expectedOutput) {
+					t.Errorf("Wrong outPut")
+				}
+				for i := 0; i < len(Output); i++ {
+					if Output[i].PathIndex != test.expectedOutput[i].PathIndex {
+						t.Errorf("Expected %v but got %v", test.expectedOutput[i].PathIndex, Output[i].PathIndex)
+					}
+					for j := 0; j < len(Output[i].Ants); j++ {
+						if Output[i].Ants[j] != test.expectedOutput[i].Ants[j] {
+							t.Errorf("Expected %v but got %v", test.expectedOutput[i].Ants[j], Output[i].Ants[j])
+						}
+					}
+
+				}
+			} else {
+				utils.MakeAntsQueue(test.bestPathGroupNames, test.numberOfAnts)
+				// Check if exit was called
+				if !calledExit {
+					t.Errorf("Expected program to exit, but it did not")
+				}
+
+				// Validate captured error message
+				output := buf.String()
+				t.Logf("Captured Output: '%s'", output) // Log the captured output for debugging
+
+				if !strings.Contains(output, test.expectedError) {
+					t.Errorf("Expected output to contain '%s', got '%s'", test.expectedError, output)
+				}
+			}
+		})
+	}
+}
+
+func TestLem_in(t *testing.T) {
+	// Prepare a temporary file with test data
+	tests := []struct {
+		name           string
+		fileName       string
+		expectedError  string
+		expectedOutput string
+	}{
+		{
+			name:     "Valid Test1",
+			fileName: "../examples/example00.txt",
+			expectedError: `4
+##start
+0 0 3
+2 2 5
+3 4 0
+##end
+1 8 3
+0-2
+2-3
+3-1
+
+turn 1: L1-2 
+turn 2: L1-3 L2-2 
+turn 3: L1-1 L2-3 L3-2 
+turn 4: L2-1 L3-3 L4-2 
+turn 5: L3-1 L4-3 
+turn 6: L4-1`,
+		},
+		{},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.expectedError == "" {
+				// Redirect stdout to capture printed output
+				oldStdout := os.Stdout
+				r, w, _ := os.Pipe()
+				os.Stdout = w
+
+				// Call the function with the test file
+				utils.Lem_in(test.fileName)
+
+				// Restore stdout and capture output
+				w.Close()
+				os.Stdout = oldStdout
+				var buf bytes.Buffer
+				buf.ReadFrom(r)
+				output := buf.String()
+
+				// Assert the expected output (adjust as per your implementation's expected output)
+				expectedOutput := `Expected output here`
+				if output != expectedOutput {
+					t.Errorf("Unexpected output.\nGot:\n%s\nExpected:\n%s", output, expectedOutput)
+				}
+			} else {
+
+			}
+		})
+	}
+
+}

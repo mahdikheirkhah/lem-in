@@ -13,9 +13,9 @@ func MoveAnts(solutions []Solution, pathsNames [][]string, rooms []Room, numberO
 		fmt.Print("turn ", turnNumber, ": ")
 
 		for _, solution := range solutions {
-			for antIndex, ant := range solution.ants {
-				stepForward(&solution.ants[antIndex], solution, paths, end, &numberOfAntsNotReachedToEnd)
-				if ant.currentRoomName == "" {
+			for antIndex, ant := range solution.Ants {
+				stepForward(&solution.Ants[antIndex], solution, paths, end, &numberOfAntsNotReachedToEnd)
+				if ant.CurrentRoomName == "" {
 					break
 				}
 			}
@@ -43,24 +43,24 @@ func stepForward(ant *Ant, solution Solution, paths [][]Room, end Room, numberOf
 	bgYellow := "\033[43m"
 	reset := "\033[0m"
 
-	antCurrentRoomName := ant.currentRoomName
+	antCurrentRoomName := ant.CurrentRoomName
 	if antCurrentRoomName != end.Name {
-		for i, v := range paths[solution.pathIndex] {
+		for i, v := range paths[solution.PathIndex] {
 			if antCurrentRoomName == "" {
-				ant.currentRoomName = paths[solution.pathIndex][0].Name
+				ant.CurrentRoomName = paths[solution.PathIndex][0].Name
 				break
 			} else if v.Name == antCurrentRoomName {
-				ant.currentRoomName = paths[solution.pathIndex][i+1].Name
+				ant.CurrentRoomName = paths[solution.PathIndex][i+1].Name
 				break
 			}
 		}
-		if !ant.hasReachedTheEnd {
-			if ant.currentRoomName == end.Name {
-				fmt.Print(bgYellow, "L", ant.id, "-", ant.currentRoomName, reset, " ")
-				ant.hasReachedTheEnd = true
+		if !ant.HasReachedTheEnd {
+			if ant.CurrentRoomName == end.Name {
+				fmt.Print(bgYellow, "L", ant.Id, "-", ant.CurrentRoomName, reset, " ")
+				ant.HasReachedTheEnd = true
 				*numberOfAntsNotReachedToEnd--
 			} else {
-				fmt.Print("L", ant.id, "-", ant.currentRoomName, " ")
+				fmt.Print("L", ant.Id, "-", ant.CurrentRoomName, " ")
 			}
 		}
 	}
