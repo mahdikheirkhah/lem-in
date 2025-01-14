@@ -70,7 +70,9 @@ func FilterNonIntersectingGroups(allPaths [][]Room) [][][]Room {
 	backtrack = func(start int, group [][]Room) {
 		// Add the current group to the result
 		if len(group) > 0 {
-			result = append(result, group)
+			groupCopy := make([][]Room, len(group))
+			copy(groupCopy, group)
+			result = append(result, groupCopy)
 		}
 
 		// Iterate over remaining paths
