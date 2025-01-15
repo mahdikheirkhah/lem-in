@@ -44,7 +44,7 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 	}
 
 	if len(rooms) == 0 {
-		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, no rooms found"), true)
 		return -1, nil, nil
 	}
 
@@ -58,12 +58,12 @@ func CheckContent(fileContent []string) (int, []Room, []Tunnel) {
 	}
 
 	if len(tunnels) == 0 {
-		errorHandler.CheckError(errors.New("ERROR: invalid data format"), true)
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, no tunnel found"), true)
 		return -1, nil, nil
 	}
 
 	if !checkUniqueName(rooms) {
-		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format"), true)
+		errorHandler.CheckError(errors.New("ERROR: invalid data format, invalid room format, duplicate room names"), true)
 		return -1, nil, nil
 	}
 

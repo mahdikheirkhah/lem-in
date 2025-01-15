@@ -148,7 +148,7 @@ func FindBestPathGroup(groups [][][]Room, ants int) [][]string {
 		// Assign ants to paths using a greedy strategy
 		numAnts := assignAntsToPaths(pathLengths, ants)
 
-		// Calculate the time for this group
+		// Calculate the time for this group which is equal to the longest time between all paths of group
 		maxTime := 0
 		for i, length := range pathLengths {
 			time := length + numAnts[i] - 1
@@ -164,6 +164,7 @@ func FindBestPathGroup(groups [][][]Room, ants int) [][]string {
 		}
 	}
 
+	// Here we found bestGroup but we need names of the rooms in paths of group so we do this
 	var bestPathGroupNames [][]string
 	for _, path := range bestGroup {
 		var pathNames []string
