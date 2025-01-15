@@ -23,22 +23,19 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 
 func findSuitablePath(lastPathIndex int, paths [][]string, solutions []Solution) int {
 	cntr := 0
-	for i := lastPathIndex; cntr < len(solutions); i++ {
+	for i := 0; cntr < len(solutions); i++ {
 		cntr++
 		if i != len(solutions)-1 {
-			if len(paths[i])+len(solutions[i].Ants) > len(paths[i+1])+len(solutions[i+1].Ants) {
-				continue
-			} else {
+			if len(paths[i])+len(solutions[i].Ants) <= len(paths[i+1])+len(solutions[i+1].Ants) {
 				return i
+			} else {
+				continue
 			}
 		} else {
-			if len(paths[i])+len(solutions[i].Ants) > len(paths[0])+len(solutions[0].Ants) {
-				if lastPathIndex == 0 {
-					return 0
-				}
-				i = -1
-			} else {
+			if len(paths[i])+len(solutions[i].Ants) <= len(paths[0])+len(solutions[0].Ants) {
 				return i
+			} else {
+				i = -1
 			}
 		}
 	}

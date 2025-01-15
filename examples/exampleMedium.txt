@@ -1,0 +1,41 @@
+6
+##start
+start 0 3
+a1 1 1
+a2 1 1
+b1 1 1
+b2 1 1
+b3 1 1
+c1 1 1
+c2 1 1
+c3 1 1
+d1 1 1
+d2 1 1
+d3 1 1
+d4 1 1
+d5 1 1
+d6 1 1
+d7 1 1
+d8 1 1
+##end
+end 8 3
+start-a1
+a1-a2
+a2-end
+start-b1
+b1-b2
+b2-b3
+b3-end
+start-c1
+c1-c2
+c2-c3
+c3-end
+start-d1
+d1-d2
+d2-d3
+d3-d4
+d4-d5
+d5-d6
+d6-d7
+d7-d8
+d8-end
