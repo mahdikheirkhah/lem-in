@@ -35,9 +35,6 @@ func findSuitablePath(paths [][]string, solutions []Solution) int {
 			if len(paths[i])+len(solutions[i].Ants) <= len(paths[0])+len(solutions[0].Ants) {
 				return i
 			} else {
-				// if lastPathIndex == 0 {
-				// 	return 0
-				// }
 				i = -1
 			}
 		}
