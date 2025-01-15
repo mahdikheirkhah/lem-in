@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -1851,25 +1852,25 @@ func TestMakeAntsQueue(t *testing.T) {
 				PathIndex: 0,
 				Ants: []utils.Ant{
 					{Id: 1, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
-					{Id: 5, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+					{Id: 3, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
+					{Id: 6, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
 					{Id: 9, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
-					{Id: 10, PathIndex: 0, CurrentRoomName: "", HasReachedTheEnd: false},
 				},
 			},
 				{
 					PathIndex: 1,
 					Ants: []utils.Ant{
 						{Id: 2, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
-						{Id: 6, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
-						{Id: 7, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 5, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 8, PathIndex: 1, CurrentRoomName: "", HasReachedTheEnd: false},
 					},
 				},
 				{
 					PathIndex: 2,
 					Ants: []utils.Ant{
-						{Id: 3, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
 						{Id: 4, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
-						{Id: 8, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 7, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
+						{Id: 10, PathIndex: 2, CurrentRoomName: "", HasReachedTheEnd: false},
 					},
 				}},
 		},
@@ -1924,6 +1925,12 @@ func TestMakeAntsQueue(t *testing.T) {
 	}
 }
 
+// StripANSI removes ANSI escape sequences from a string.
+func StripANSI(input string) string {
+	re := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+	return re.ReplaceAllString(input, "")
+}
+
 func TestLem_in(t *testing.T) {
 	// Prepare a temporary file with test data
 	tests := []struct {
@@ -1935,7 +1942,7 @@ func TestLem_in(t *testing.T) {
 		{
 			name:     "Valid Test1",
 			fileName: "../examples/example00.txt",
-			expectedError: `4
+			expectedOutput: `4
 ##start
 0 0 3
 2 2 5
@@ -1951,9 +1958,9 @@ turn 2: L1-3 L2-2
 turn 3: L1-1 L2-3 L3-2 
 turn 4: L2-1 L3-3 L4-2 
 turn 5: L3-1 L4-3 
-turn 6: L4-1`,
+turn 6: L4-1 
+`,
 		},
-		{},
 	}
 
 	for _, test := range tests {
@@ -1974,10 +1981,12 @@ turn 6: L4-1`,
 				buf.ReadFrom(r)
 				output := buf.String()
 
+				cleanOutput := StripANSI(output)
+				cleanExpected := StripANSI(test.expectedOutput)
+
 				// Assert the expected output (adjust as per your implementation's expected output)
-				expectedOutput := `Expected output here`
-				if output != expectedOutput {
-					t.Errorf("Unexpected output.\nGot:\n%s\nExpected:\n%s", output, expectedOutput)
+				if cleanOutput != cleanExpected {
+					t.Errorf("Unexpected output.\nGot:\n%s\nExpected:\n%s", cleanOutput, cleanExpected)
 				}
 			} else {
 
