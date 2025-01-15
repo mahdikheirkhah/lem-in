@@ -12,7 +12,7 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	pathIndex := 0
 
 	for antsIndex := 0; antsIndex < numberOfAnts; antsIndex++ {
-		pathIndex = findSuitablePath(pathIndex, paths, solutions)
+		pathIndex = findSuitablePath(paths, solutions)
 
 		ants[antsIndex].PathIndex = pathIndex
 		solutions[pathIndex].Ants = append(solutions[pathIndex].Ants, ants[antsIndex])
@@ -21,7 +21,7 @@ func MakeAntsQueue(paths [][]string, numberOfAnts int) []Solution {
 	return solutions
 }
 
-func findSuitablePath(lastPathIndex int, paths [][]string, solutions []Solution) int {
+func findSuitablePath(paths [][]string, solutions []Solution) int {
 	cntr := 0
 	for i := 0; cntr < len(solutions); i++ {
 		cntr++
@@ -35,6 +35,9 @@ func findSuitablePath(lastPathIndex int, paths [][]string, solutions []Solution)
 			if len(paths[i])+len(solutions[i].Ants) <= len(paths[0])+len(solutions[0].Ants) {
 				return i
 			} else {
+				// if lastPathIndex == 0 {
+				// 	return 0
+				// }
 				i = -1
 			}
 		}
