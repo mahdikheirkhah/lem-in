@@ -16,6 +16,9 @@ func Lem_in(fileName string) {
 	fileContent := fileHandler.ReadAll(fileName)
 
 	numberOfAnts, rooms, tunnels := CheckContent(fileContent)
+	if numberOfAnts == -1 || rooms == nil || tunnels == nil {
+		return
+	}
 	graph := CreateGraph(tunnels)
 	graph.Vertices = len(rooms)
 
@@ -24,6 +27,9 @@ func Lem_in(fileName string) {
 
 	// Step 1: Extract all paths
 	allPaths := ExtractAllPaths(graph, startRoom, endRoom, rooms)
+	if allPaths == nil {
+		return
+	}
 
 	sort.Sort(PathSlice(allPaths))
 

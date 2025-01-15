@@ -38,6 +38,7 @@ func ExtractAllPaths(graph Graph, start, end Room, rooms []Room) [][]Room {
 
 	if len(allPaths) < 1 {
 		errorHandler.CheckError(errors.New("ERROR: invalid data format, no path found"), true)
+		return nil
 	}
 
 	return allPaths
