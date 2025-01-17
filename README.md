@@ -18,9 +18,17 @@
 ```
     lem-in/
     ├── main.go               
-    ├── lem-in_test.go
     ├── go.mod
     ├── README.md
+    ├── test/
+    │   ├── lem-in_test.go
+    │   ├── test1.txt
+    │   ├── test2.txt
+    │   ├── test3.txt
+    │   ├── test4.txt  
+    │   ├── test5.txt
+    │   ├── test6.txt
+    │   └── ValidFile.txt
     ├── utils/
     │   ├── checkContent.go
     │   ├── createGraph.go
@@ -30,8 +38,9 @@
     │   └── structs.go
     ├── fileHandler/
     │   └── read.go
-    └── errorHandler/
-        └── checkError.go
+    ├── errorHandler/
+    │    └── checkError.go
+    └──  examples/
 ```
 
 ## Usage
@@ -50,15 +59,16 @@ Install Go to run and develop the project
    cd lem-in
    ```
 
-3. Save the input describing the colony into a text file, e.g., ant_farm.txt. you can see some examples [here](https://github.com/01-edu/public/tree/master/subjects/lem-in/examples).
+3. Save the input describing the colony into a text file, e.g., ant_farm.txt. you can see some examples [here](https://github.com/01-edu/public/tree/master/subjects/lem-in/examples). Or use examples in example folder.
     
 
 4. Run the program with the command::
 
    ```bash
-   go run . ant_farm.txt
+   go run . examples\example00.txt
 
    ```
+    Or put any file you like as an argument for the programme.
 ### Examples of Output
 #### Example 1
 
@@ -151,5 +161,5 @@ Install Go to run and develop the project
 - Parisa Rahimi
 - Fatemeh Kheirkhah
 - Mohammad mahdi Kheirkhah
-
+- Majid Rouhani
 ---
